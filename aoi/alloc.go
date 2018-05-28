@@ -2,7 +2,6 @@ package aoi
 
 type Blocks struct {
 	blockSize int
-	mBlocks   []*[]QuadTreeNode
 	mFreeList []*QuadTreeNode
 }
 
@@ -28,9 +27,7 @@ func (this *Blocks) Delete(node *QuadTreeNode) {
 }
 
 func (this *Blocks) newBlock() {
-	items := make([]QuadTreeNode, this.blockSize)
-	this.mBlocks = append(this.mBlocks, &items)
-	for _, item := range items {
-		this.mFreeList = append(this.mFreeList, &item)
+	for i := 0; i < this.blockSize; i++ {
+		this.mFreeList = append(this.mFreeList, &QuadTreeNode{})
 	}
 }

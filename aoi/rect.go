@@ -13,8 +13,8 @@ const (
 type Rect struct {
 	mLeft   float32
 	mRight  float32
-	mTop    float32
 	mBottom float32
+	mTop    float32
 	mMidX   float32
 	mMidY   float32
 }
@@ -43,6 +43,12 @@ func (this *Rect) ContainsRect(rect *Rect) bool {
 }
 
 func (this *Rect) Contains(point *Point) bool {
+	return (point.X >= this.mLeft && point.X <= this.mRight &&
+		point.Y >= this.mBottom && point.Y <= this.mTop)
+}
+
+func (this *Rect) ContainsItem(item IItem) bool {
+	point := item.getPostion()
 	return (point.X >= this.mLeft && point.X <= this.mRight &&
 		point.Y >= this.mBottom && point.Y <= this.mTop)
 }

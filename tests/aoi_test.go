@@ -28,26 +28,26 @@ type A struct {
 	aoi.Object
 }
 
-func _test_add(scn *aoi.QuadTree, items []*A) {
+func _test_add(scn *aoi.QuadTree, items *[]*A) {
 	x := float32(rand.Int()%int(scn.GetBounds().Right()-scn.GetBounds().Left())) + scn.GetBounds().Left()
 	y := float32(rand.Int()%int(scn.GetBounds().Top()-scn.GetBounds().Bottom())) + scn.GetBounds().Bottom()
 	temp := &A{}
 	temp.X = x
 	temp.Y = y
 	myassert(scn.Insert(temp))
-	items = append(items, temp)
+	*items = append(*items, temp)
 }
 
-func _test_delete(scn *aoi.QuadTree, items []*A, count int) {
-	itemsNum := len(items)
+func _test_delete(scn *aoi.QuadTree, items *[]*A, count int) {
+	itemsNum := len(*items)
 	if itemsNum == 0 {
 		return
 	}
-	items = randArray(items)
+	*items = randArray(*items)
 	for i := 0; i < int(math.Min(float64(count), float64(itemsNum))); i++ {
-		temp := items[len(items)-1]
+		temp := (*items)[len(*items)-1]
 		myassert(scn.Remove(temp))
-		items = items[:len(items)-1]
+		*items = (*items)[:len(*items)-1]
 	}
 }
 
@@ -61,7 +61,7 @@ func _test_query(scn *aoi.QuadTree, items []*A) {
 		float32(rand.Int()%int(scn.GetBounds().Top()-scn.GetBounds().Bottom()))+scn.GetBounds().Bottom())
 
 	for i := 0; i < len(items); i++ {
-		if queryArea.Contains(items[i].GetPostion()) {
+		if queryArea.ContainsItem(items[i]) {
 			testCount++
 		}
 	}
@@ -72,7 +72,7 @@ func _test_query(scn *aoi.QuadTree, items []*A) {
 		findCount++
 		item = item.Next()
 	}
-	//printf("find obj count:%u, test count:%u, total count:%u\n", findCount, testCount, scn.GetItemCount());
+	//fmt.Printf("find obj count:%d, test count:%d, total count:%d\n", findCount, testCount, scn.GetItemCount())
 	myassert(testCount == findCount)
 }
 
@@ -88,7 +88,7 @@ func _test_query_by_radius(scn *aoi.QuadTree, items []*A, radius float32) {
 		items[index].Y+radius)
 
 	for i := 0; i < len(items); i++ {
-		if queryArea.Contains(items[i].GetPostion()) {
+		if queryArea.ContainsItem(items[i]) {
 			testCount++
 		}
 	}
@@ -99,7 +99,7 @@ func _test_query_by_radius(scn *aoi.QuadTree, items []*A, radius float32) {
 		findCount++
 		item = item.Next()
 	}
-	//printf("find obj count:%u, test count:%u, total count:%u\n", findCount, testCount, scn.GetItemCount());
+	//fmt.Printf("find obj count:%d, test count:%d, total count:%d\n", findCount, testCount, scn.GetItemCount())
 	myassert(testCount == findCount)
 }
 
@@ -111,7 +111,7 @@ func test1() {
 	// 测试插入
 	var items []*A
 	for i := 0; i < 8192; i++ {
-		_test_add(scn, items)
+		_test_add(scn, &items)
 	}
 
 	// 测试查询
@@ -122,7 +122,7 @@ func test1() {
 
 	// 测试删除
 	itemsNum := len(items)
-	_test_delete(scn, items, itemsNum)
+	_test_delete(scn, &items, itemsNum)
 	items = nil
 	//printf("delete obj count:%u, total count:%u\n", itemsNum, scn.GetItemCount());
 }

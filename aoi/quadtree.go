@@ -2,7 +2,7 @@ package aoi
 
 type IItem interface {
 	Next() IItem
-	GetPostion() *Point
+	getPostion() *Point
 	getItemNext() IItem
 	setItemNext(item IItem)
 	setQueryNext(item IItem)
@@ -39,14 +39,14 @@ func (this *QuadTree) Query1(area *Rect) IItem {
 
 func (this *QuadTree) Query2(source IItem, radius float32) IItem {
 	var area Rect
-	pos := source.GetPostion()
+	pos := source.getPostion()
 	area.Init(pos.X-radius, pos.X+radius, pos.Y-radius, pos.Y+radius)
 	return this.Query4(source, &area)
 }
 
 func (this *QuadTree) Query3(source IItem, halfExtentsX, halfExtentsY float32) IItem {
 	var area Rect
-	pos := source.GetPostion()
+	pos := source.getPostion()
 	area.Init(pos.X-halfExtentsX, pos.X+halfExtentsX, pos.Y-halfExtentsY, pos.Y+halfExtentsY)
 	return this.Query4(source, &area)
 }
@@ -68,7 +68,7 @@ func (this *QuadTree) Query4(source IItem, area *Rect) IItem {
 func (this *QuadTree) Update(item IItem) bool {
 	node := item.getNode()
 	if node != nil {
-		if node.mBounds.Contains(item.GetPostion()) {
+		if node.mBounds.ContainsItem(item) {
 			return true
 		}
 		node.Remove(item)

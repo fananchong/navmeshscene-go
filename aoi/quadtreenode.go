@@ -36,7 +36,7 @@ func (this *QuadTreeNode) Init(tree *QuadTree, t ENodeType, lvl int, rect *Rect,
 func (this *QuadTreeNode) Insert(item IItem) bool {
 LABLE_NORMAL:
 	if this.mNodeType == NodeTypeNormal {
-		index := this.mBounds.GetQuadrant(item.GetPostion()) - 1
+		index := this.mBounds.GetQuadrant(item.getPostion()) - 1
 		if index >= 0 {
 			return this.mChildrens[index].Insert(item)
 		} else {
@@ -44,7 +44,7 @@ LABLE_NORMAL:
 		}
 	} else {
 		if this.mItemCount < this.mTree.NodeCapacity {
-			if this.mBounds.Contains(item.GetPostion()) {
+			if this.mBounds.ContainsItem(item) {
 				this.mItemCount++
 				item.setItemNext(this.mItems)
 				this.mItems = item
@@ -93,7 +93,7 @@ func (this *QuadTreeNode) split() {
 
 	for it := this.mItems; it != nil; {
 		head := it.getItemNext()
-		index := this.mBounds.GetQuadrantWithoutBounds(it.GetPostion()) - 1
+		index := this.mBounds.GetQuadrantWithoutBounds(it.getPostion()) - 1
 		this.mChildrens[index].Insert(it)
 		it = head
 	}
@@ -167,7 +167,7 @@ func (this *QuadTreeNode) Query(area *Rect, head, tail *IItem) {
 		}
 	} else {
 		for it := this.mItems; it != nil; it = it.getItemNext() {
-			if area.Contains(it.GetPostion()) {
+			if area.ContainsItem(it) {
 				if (*head) != nil {
 					(*tail).setQueryNext(it)
 					*tail = it
