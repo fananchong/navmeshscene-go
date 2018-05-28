@@ -19,6 +19,12 @@ type Rect struct {
 	mMidY   float32
 }
 
+func NewRect(left, right, bottom, top float32) *Rect {
+	this := &Rect{}
+	this.Init(left, right, bottom, top)
+	return this
+}
+
 func (this *Rect) Init(left, right, bottom, top float32) {
 	this.mLeft = left
 	this.mRight = right
