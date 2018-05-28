@@ -5,7 +5,7 @@ type Point struct {
 	Y float32
 }
 
-func (this *Point) getPostion() *Point {
+func (this *Point) GetPostion() *Point {
 	return this
 }
 
