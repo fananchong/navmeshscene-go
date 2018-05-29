@@ -23,10 +23,12 @@ func init() {
 }
 
 func Benchmark_Add(t *testing.B) {
-	var items []*tests.A
-	var scn *aoi.QuadTree = aoi.NewDefaultSecene(aoi.NewRect(0, w, 0, h))
+	var items1 []*tests.A
+	var scn1 *aoi.QuadTree = aoi.NewDefaultSecene(aoi.NewRect(0, w, 0, h))
+
+	t.N = 5000
 	for i := 0; i < t.N; i++ {
-		tests.Add(scn, &items)
+		tests.Add(scn1, &items1)
 	}
 }
 

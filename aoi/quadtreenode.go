@@ -15,8 +15,7 @@ type QuadTreeNode struct {
 	mBounds    Rect                       // 节点边框范围
 	mParent    *QuadTreeNode              // 父节点
 	mChildrens [ChildrenNum]*QuadTreeNode // 孩子节点
-	mItemCount int                        // 叶子节点上的Item数量
-	mItems     IItem                      // 叶子节点上的Items
+	mItems     []IItem                    // 叶子节点上的Items
 	mTree      *QuadTree                  // 所在树
 }
 
@@ -28,8 +27,7 @@ func (this *QuadTreeNode) Init(tree *QuadTree, t ENodeType, lvl int, rect *Rect,
 	for i := 0; i < ChildrenNum; i++ {
 		this.mChildrens[i] = nil
 	}
-	this.mItemCount = 0
-	this.mItems = nil
+	this.mItems = this.mItems[:0]
 	this.mTree = tree
 }
 
@@ -43,12 +41,10 @@ LABLE_NORMAL:
 			return false
 		}
 	} else {
-		if this.mItemCount < this.mTree.NodeCapacity {
+		if len(this.mItems) < this.mTree.NodeCapacity {
 			if this.mBounds.ContainsItem(item) {
-				this.mItemCount++
-				item.setItemNext(this.mItems)
-				this.mItems = item
 				item.setNode(this)
+				this.mItems = append(this.mItems, item)
 				return true
 			} else {
 				return false
@@ -82,43 +78,29 @@ func (this *QuadTreeNode) split() {
 	var rect3 Rect
 	rect3.Init(this.mBounds.MidX(), this.mBounds.Right(), this.mBounds.Bottom(), this.mBounds.MidY())
 
-	this.mChildrens[0] = this.mTree.mAlloc.New()
+	this.mChildrens[0] = &QuadTreeNode{}
 	this.mChildrens[0].Init(this.mTree, NodeTypeLeaf, this.mLevel+1, &rect0, this)
-	this.mChildrens[1] = this.mTree.mAlloc.New()
+	this.mChildrens[1] = &QuadTreeNode{}
 	this.mChildrens[1].Init(this.mTree, NodeTypeLeaf, this.mLevel+1, &rect1, this)
-	this.mChildrens[2] = this.mTree.mAlloc.New()
+	this.mChildrens[2] = &QuadTreeNode{}
 	this.mChildrens[2].Init(this.mTree, NodeTypeLeaf, this.mLevel+1, &rect2, this)
-	this.mChildrens[3] = this.mTree.mAlloc.New()
+	this.mChildrens[3] = &QuadTreeNode{}
 	this.mChildrens[3].Init(this.mTree, NodeTypeLeaf, this.mLevel+1, &rect3, this)
 
-	for it := this.mItems; it != nil; {
-		head := it.getItemNext()
-		index := this.mBounds.GetQuadrantWithoutBounds(it.getPostion()) - 1
-		this.mChildrens[index].Insert(it)
-		it = head
+	for _, item := range this.mItems {
+		index := this.mBounds.GetQuadrantWithoutBounds(item.getPostion()) - 1
+		this.mChildrens[index].Insert(item)
 	}
-	this.mItemCount = 0
-	this.mItems = nil
+	this.mItems = this.mItems[:0]
 }
 
 func (this *QuadTreeNode) Remove(item IItem) bool {
-	var pre IItem
-	it := this.mItems
-	for it != nil {
-		head := it.getItemNext()
+	for index, it := range this.mItems {
 		if it == item {
-			this.mItemCount--
-			if pre != nil {
-				pre.setItemNext(it.getItemNext())
-			} else {
-				this.mItems = this.mItems.getItemNext()
-			}
+			this.mItems = append(this.mItems[:index], this.mItems[index+1:]...)
 			this.tryMerge()
 			return true
-		} else {
-			pre = it
 		}
-		it = head
 	}
 	return false
 }
@@ -132,24 +114,17 @@ func (this *QuadTreeNode) tryMerge() {
 			if childrens[i].mNodeType != NodeTypeLeaf {
 				return
 			}
-			count += childrens[i].mItemCount
+			count += len(childrens[i].mItems)
 		}
 
 		if count <= this.mTree.NodeCapacity {
 			node.mNodeType = NodeTypeLeaf
-			node.mItemCount = 0
-			node.mItems = nil
+			node.mItems = node.mItems[:0]
 			for i := 0; i < ChildrenNum; i++ {
-				it := childrens[i].mItems
-				for it != nil {
-					head := it.getItemNext()
-					node.mItemCount++
-					it.setItemNext(node.mItems)
-					node.mItems = it
-					it.setNode(node)
-					it = head
+				for _, item := range childrens[i].mItems {
+					item.setNode(node)
+					node.mItems = append(node.mItems, item)
 				}
-				this.mTree.mAlloc.Delete(childrens[i])
 			}
 			node = node.mParent
 		} else {
@@ -166,14 +141,14 @@ func (this *QuadTreeNode) Query(area *Rect, head, tail *IItem) {
 			}
 		}
 	} else {
-		for it := this.mItems; it != nil; it = it.getItemNext() {
-			if area.ContainsItem(it) {
+		for _, item := range this.mItems {
+			if area.ContainsItem(item) {
 				if (*head) != nil {
-					(*tail).setQueryNext(it)
-					*tail = it
+					(*tail).setQueryNext(item)
+					*tail = item
 				} else {
-					*head = it
-					*tail = it
+					*head = item
+					*tail = item
 				}
 			}
 		}
@@ -187,7 +162,7 @@ func (this *QuadTreeNode) GetItemCount() int {
 			count += this.mChildrens[i].GetItemCount()
 		}
 	} else {
-		count += this.mItemCount
+		count += len(this.mItems)
 	}
 	return count
 }

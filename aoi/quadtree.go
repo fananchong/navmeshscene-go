@@ -14,7 +14,6 @@ type QuadTree struct {
 	NodeCapacity int          // 节点容量
 	LevelLimit   int          // 层数限制
 	mRoot        QuadTreeNode // 根节点
-	mAlloc       Blocks       // 节点分配器
 }
 
 func (this *QuadTree) Insert(item IItem) bool { return this.mRoot.Insert(item) }

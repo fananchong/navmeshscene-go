@@ -75,6 +75,10 @@ func Query(scn *aoi.QuadTree, items []*A) {
 }
 
 func Query_by_radius(scn *aoi.QuadTree, items []*A, radius float32) {
+	if len(items) == 0 {
+		return
+	}
+
 	testCount := 0
 
 	index := rand.Int() % len(items)
