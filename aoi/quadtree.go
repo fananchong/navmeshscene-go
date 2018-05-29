@@ -3,8 +3,6 @@ package aoi
 type IItem interface {
 	Next() IItem
 	getPostion() *Point
-	getItemNext() IItem
-	setItemNext(item IItem)
 	setQueryNext(item IItem)
 	getNode() *QuadTreeNode
 	setNode(node *QuadTreeNode)

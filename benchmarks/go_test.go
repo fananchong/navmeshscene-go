@@ -1,7 +1,9 @@
 package benchmarks
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/fananchong/navmeshscene-go/aoi"
 	"github.com/fananchong/navmeshscene-go/tests"
@@ -17,6 +19,7 @@ var items []*tests.A
 var scn *aoi.QuadTree = aoi.NewDefaultSecene(aoi.NewRect(0, w, 0, h))
 
 func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < PLAYER_COUNT; i++ {
 		tests.Add(scn, &items)
 	}
