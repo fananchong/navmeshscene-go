@@ -15,7 +15,7 @@ type QuadTreeNode struct {
 	mBounds    Rect                       // 节点边框范围
 	mParent    *QuadTreeNode              // 父节点
 	mChildrens [ChildrenNum]*QuadTreeNode // 孩子节点
-	mItems     []IItem                    // 叶子节点上的Items
+	mItems     []*Object                  // 叶子节点上的Items
 	mTree      *QuadTree                  // 所在树
 }
 
@@ -31,10 +31,10 @@ func (this *QuadTreeNode) Init(tree *QuadTree, t ENodeType, lvl int, rect *Rect,
 	this.mTree = tree
 }
 
-func (this *QuadTreeNode) Insert(item IItem) bool {
+func (this *QuadTreeNode) Insert(item *Object) bool {
 LABLE_NORMAL:
 	if this.mNodeType == NodeTypeNormal {
-		index := this.mBounds.GetQuadrant(item.getPostion()) - 1
+		index := this.mBounds.GetQuadrant(item) - 1
 		if index >= 0 {
 			return this.mChildrens[index].Insert(item)
 		} else {
@@ -43,7 +43,7 @@ LABLE_NORMAL:
 	} else {
 		if len(this.mItems) < this.mTree.NodeCapacity {
 			if this.mBounds.ContainsItem(item) {
-				item.setNode(this)
+				item.mNode = this
 				this.mItems = append(this.mItems, item)
 				return true
 			} else {
@@ -88,13 +88,13 @@ func (this *QuadTreeNode) split() {
 	this.mChildrens[3].Init(this.mTree, NodeTypeLeaf, this.mLevel+1, &rect3, this)
 
 	for _, item := range this.mItems {
-		index := this.mBounds.GetQuadrantWithoutBounds(item.getPostion()) - 1
+		index := this.mBounds.GetQuadrantWithoutBounds(item) - 1
 		this.mChildrens[index].Insert(item)
 	}
 	this.mItems = this.mItems[:0]
 }
 
-func (this *QuadTreeNode) Remove(item IItem) bool {
+func (this *QuadTreeNode) Remove(item *Object) bool {
 	for index, it := range this.mItems {
 		if it == item {
 			this.mItems = append(this.mItems[:index], this.mItems[index+1:]...)
@@ -122,7 +122,7 @@ func (this *QuadTreeNode) tryMerge() {
 			node.mItems = node.mItems[:0]
 			for i := 0; i < ChildrenNum; i++ {
 				for _, item := range childrens[i].mItems {
-					item.setNode(node)
+					item.mNode = node
 					node.mItems = append(node.mItems, item)
 				}
 			}
@@ -133,7 +133,7 @@ func (this *QuadTreeNode) tryMerge() {
 	}
 }
 
-func (this *QuadTreeNode) Query(area *Rect, head, tail *IItem) {
+func (this *QuadTreeNode) Query(area *Rect, head, tail **Object) {
 	if this.mNodeType == NodeTypeNormal {
 		for i := 0; i < ChildrenNum; i++ {
 			if area.Intersects(&(this.mChildrens[i].mBounds)) {
@@ -144,7 +144,7 @@ func (this *QuadTreeNode) Query(area *Rect, head, tail *IItem) {
 		for _, item := range this.mItems {
 			if area.ContainsItem(item) {
 				if (*head) != nil {
-					(*tail).setQueryNext(item)
+					(*tail).QueryNext = item
 					*tail = item
 				} else {
 					*head = item

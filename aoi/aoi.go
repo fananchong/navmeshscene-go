@@ -2,14 +2,9 @@ package aoi
 
 type Object struct {
 	Point
-	mNode      *QuadTreeNode
-	mQueryNext IItem
+	mNode     *QuadTreeNode
+	QueryNext *Object
 }
-
-func (this *Object) Next() IItem                { return this.mQueryNext }
-func (this *Object) setQueryNext(item IItem)    { this.mQueryNext = item }
-func (this *Object) getNode() *QuadTreeNode     { return this.mNode }
-func (this *Object) setNode(node *QuadTreeNode) { this.mNode = node }
 
 func NewScene(bounds *Rect, nodeCapacity, levelLimit int) *QuadTree {
 	this := &QuadTree{}

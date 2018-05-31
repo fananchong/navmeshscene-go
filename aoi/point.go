@@ -5,8 +5,4 @@ type Point struct {
 	Y float32
 }
 
-func (this *Point) getPostion() *Point {
-	return this
-}
-
 type Size Point

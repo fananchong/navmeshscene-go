@@ -38,9 +38,7 @@ func Benchmark_Add(t *testing.B) {
 func Benchmark_Query1(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < PLAYER_COUNT; j++ {
-			var rect aoi.Rect
-			rect.Init(items[j].X-r, items[j].X+r, items[j].Y-r, items[j].Y+r)
-			scn.Query2(items[j], r)
+			scn.Query2(&items[j].Object, r)
 		}
 	}
 }

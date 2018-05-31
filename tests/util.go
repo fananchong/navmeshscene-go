@@ -32,7 +32,7 @@ func Add(scn *aoi.QuadTree, items *[]*A) {
 	temp := &A{}
 	temp.X = x
 	temp.Y = y
-	myassert(scn.Insert(temp))
+	myassert(scn.Insert(&temp.Object))
 	*items = append(*items, temp)
 }
 
@@ -44,7 +44,7 @@ func _test_delete(scn *aoi.QuadTree, items *[]*A, count int) {
 	*items = randArray(*items)
 	for i := 0; i < int(math.Min(float64(count), float64(itemsNum))); i++ {
 		temp := (*items)[len(*items)-1]
-		myassert(scn.Remove(temp))
+		myassert(scn.Remove(&temp.Object))
 		*items = (*items)[:len(*items)-1]
 	}
 }
@@ -59,7 +59,7 @@ func Query(scn *aoi.QuadTree, items []*A) {
 		float32(rand.Int()%int(scn.GetBounds().Top()-scn.GetBounds().Bottom()))+scn.GetBounds().Bottom())
 
 	for i := 0; i < len(items); i++ {
-		if queryArea.ContainsItem(items[i]) {
+		if queryArea.ContainsItem(&items[i].Object) {
 			testCount++
 		}
 	}
@@ -68,7 +68,7 @@ func Query(scn *aoi.QuadTree, items []*A) {
 	item := scn.Query1(&queryArea)
 	for item != nil {
 		findCount++
-		item = item.Next()
+		item = item.QueryNext
 	}
 	//fmt.Printf("find obj count:%d, test count:%d, total count:%d\n", findCount, testCount, scn.GetItemCount())
 	myassert(testCount == findCount)
@@ -90,7 +90,7 @@ func Query_by_radius(scn *aoi.QuadTree, items []*A, radius float32) {
 		items[index].Y+radius)
 
 	for i := 0; i < len(items); i++ {
-		if queryArea.ContainsItem(items[i]) {
+		if queryArea.ContainsItem(&items[i].Object) {
 			testCount++
 		}
 	}
@@ -99,7 +99,7 @@ func Query_by_radius(scn *aoi.QuadTree, items []*A, radius float32) {
 	item := scn.Query1(&queryArea)
 	for item != nil {
 		findCount++
-		item = item.Next()
+		item = item.QueryNext
 	}
 	//fmt.Printf("find obj count:%d, test count:%d, total count:%d\n", findCount, testCount, scn.GetItemCount())
 	myassert(testCount == findCount)

@@ -1,23 +1,15 @@
 package aoi
 
-type IItem interface {
-	Next() IItem
-	getPostion() *Point
-	setQueryNext(item IItem)
-	getNode() *QuadTreeNode
-	setNode(node *QuadTreeNode)
-}
-
 type QuadTree struct {
 	NodeCapacity int          // 节点容量
 	LevelLimit   int          // 层数限制
 	mRoot        QuadTreeNode // 根节点
 }
 
-func (this *QuadTree) Insert(item IItem) bool { return this.mRoot.Insert(item) }
+func (this *QuadTree) Insert(item *Object) bool { return this.mRoot.Insert(item) }
 
-func (this *QuadTree) Remove(item IItem) bool {
-	node := item.getNode()
+func (this *QuadTree) Remove(item *Object) bool {
+	node := item.mNode
 	if node != nil {
 		return node.Remove(item)
 	} else {
@@ -25,45 +17,43 @@ func (this *QuadTree) Remove(item IItem) bool {
 	}
 }
 
-func (this *QuadTree) Query1(area *Rect) IItem {
-	var head, tail IItem
+func (this *QuadTree) Query1(area *Rect) *Object {
+	var head, tail *Object
 	this.mRoot.Query(area, &head, &tail)
 	if tail != nil {
-		tail.setQueryNext(nil)
+		tail.QueryNext = nil
 	}
 	return head
 }
 
-func (this *QuadTree) Query2(source IItem, radius float32) IItem {
+func (this *QuadTree) Query2(source *Object, radius float32) *Object {
 	var area Rect
-	pos := source.getPostion()
-	area.Init(pos.X-radius, pos.X+radius, pos.Y-radius, pos.Y+radius)
+	area.Init(source.X-radius, source.X+radius, source.Y-radius, source.Y+radius)
 	return this.Query4(source, &area)
 }
 
-func (this *QuadTree) Query3(source IItem, halfExtentsX, halfExtentsY float32) IItem {
+func (this *QuadTree) Query3(source *Object, halfExtentsX, halfExtentsY float32) *Object {
 	var area Rect
-	pos := source.getPostion()
-	area.Init(pos.X-halfExtentsX, pos.X+halfExtentsX, pos.Y-halfExtentsY, pos.Y+halfExtentsY)
+	area.Init(source.X-halfExtentsX, source.X+halfExtentsX, source.Y-halfExtentsY, source.Y+halfExtentsY)
 	return this.Query4(source, &area)
 }
 
-func (this *QuadTree) Query4(source IItem, area *Rect) IItem {
-	var head, tail IItem
-	node := source.getNode()
+func (this *QuadTree) Query4(source *Object, area *Rect) *Object {
+	var head, tail *Object
+	node := source.mNode
 	if node != nil && node.mBounds.ContainsRect(area) {
 		node.Query(area, &head, &tail)
 	} else {
 		this.mRoot.Query(area, &head, &tail)
 	}
 	if tail != nil {
-		tail.setQueryNext(nil)
+		tail.QueryNext = nil
 	}
 	return head
 }
 
-func (this *QuadTree) Update(item IItem) bool {
-	node := item.getNode()
+func (this *QuadTree) Update(item *Object) bool {
+	node := item.mNode
 	if node != nil {
 		if node.mBounds.ContainsItem(item) {
 			return true

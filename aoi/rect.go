@@ -53,10 +53,9 @@ func (this *Rect) Contains(point *Point) bool {
 		point.Y >= this.mBottom && point.Y <= this.mTop)
 }
 
-func (this *Rect) ContainsItem(item IItem) bool {
-	point := item.getPostion()
-	return (point.X >= this.mLeft && point.X <= this.mRight &&
-		point.Y >= this.mBottom && point.Y <= this.mTop)
+func (this *Rect) ContainsItem(item *Object) bool {
+	return (item.X >= this.mLeft && item.X <= this.mRight &&
+		item.Y >= this.mBottom && item.Y <= this.mTop)
 }
 
 func (this *Rect) Intersects(rect *Rect) bool {
@@ -66,16 +65,16 @@ func (this *Rect) Intersects(rect *Rect) bool {
 		rect.mTop < this.mBottom)
 }
 
-func (this *Rect) GetQuadrant(point *Point) EQuadrant {
-	if this.Contains(point) {
-		if point.Y >= this.mMidY {
-			if point.X >= this.mMidX {
+func (this *Rect) GetQuadrant(item *Object) EQuadrant {
+	if this.ContainsItem(item) {
+		if item.Y >= this.mMidY {
+			if item.X >= this.mMidX {
 				return RightTop
 			} else {
 				return LeftTop
 			}
 		} else {
-			if point.X >= this.mMidX {
+			if item.X >= this.mMidX {
 				return RightDown
 			} else {
 				return LeftDown
@@ -86,15 +85,15 @@ func (this *Rect) GetQuadrant(point *Point) EQuadrant {
 	}
 }
 
-func (this *Rect) GetQuadrantWithoutBounds(point *Point) EQuadrant {
-	if point.Y >= this.mMidY {
-		if point.X >= this.mMidX {
+func (this *Rect) GetQuadrantWithoutBounds(item *Object) EQuadrant {
+	if item.Y >= this.mMidY {
+		if item.X >= this.mMidX {
 			return RightTop
 		} else {
 			return LeftTop
 		}
 	} else {
-		if point.X >= this.mMidX {
+		if item.X >= this.mMidX {
 			return RightDown
 		} else {
 			return LeftDown
