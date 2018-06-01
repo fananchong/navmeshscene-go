@@ -1,0 +1,18 @@
+{
+	"ImportPath": "github.com/fananchong/navmeshscene-go",
+	"GoVersion": "go1.10",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/fananchong/recastnavigation-go/Detour",
+			"Rev": "a4ea70a46d199139e3e5845d1906146b749cc91b"
+		},
+		{
+			"ImportPath": "github.com/fananchong/recastnavigation-go/DetourTileCache",
+			"Rev": "a4ea70a46d199139e3e5845d1906146b749cc91b"
+		}
+	]
+}
