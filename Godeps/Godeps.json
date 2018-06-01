@@ -13,6 +13,10 @@
 		{
 			"ImportPath": "github.com/fananchong/recastnavigation-go/DetourTileCache",
 			"Rev": "a4ea70a46d199139e3e5845d1906146b749cc91b"
+		},
+		{
+			"ImportPath": "github.com/fananchong/recastnavigation-go/fastlz",
+			"Rev": "a4ea70a46d199139e3e5845d1906146b749cc91b"
 		}
 	]
 }
