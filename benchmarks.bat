@@ -4,6 +4,6 @@ set GOPATH=%BASEDIR%
 echo %GOPATH%
 
 cd %CURDIR%\benchmarks
-call go test -v -test.bench=".*" -count=1
+call go test scene_test.go -v -test.bench=".*" -count=1
 
 cd %CURDIR%
