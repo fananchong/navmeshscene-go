@@ -56,5 +56,5 @@ func test2() {
 func Test_aoi(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	test1()
-	test2()
+	//test2()
 }

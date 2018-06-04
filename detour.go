@@ -36,7 +36,7 @@ func NewDetour(bStaticMesh bool, maxNode uint16) *Detour {
 	return this
 }
 
-var mStaticMesh map[string]*detour.DtNavMesh
+var mStaticMesh map[string]*detour.DtNavMesh = make(map[string]*detour.DtNavMesh)
 var mStaticMeshMutex sync.Mutex
 
 const FILE_SUFFIX_0 string = ".tile.bin"
@@ -101,10 +101,12 @@ func (this *Detour) createStaticMesh(path string, errCode *int) *detour.DtNavMes
 }
 
 type NavMeshSetHeader struct {
-	magic      int32
-	version    int32
-	numTiles   int32
-	params     detour.DtNavMeshParams
+	magic    int32
+	version  int32
+	numTiles int32
+	params   detour.DtNavMeshParams
+}
+type NavMeshSetHeaderExt struct {
 	boundsMinX float32
 	boundsMinY float32
 	boundsMinZ float32
@@ -124,12 +126,14 @@ type TileCacheSetHeader struct {
 	numTiles    int32
 	meshParams  detour.DtNavMeshParams
 	cacheParams dtcache.DtTileCacheParams
-	boundsMinX  float32
-	boundsMinY  float32
-	boundsMinZ  float32
-	boundsMaxX  float32
-	boundsMaxY  float32
-	boundsMaxZ  float32
+}
+type TileCacheSetHeaderExt struct {
+	boundsMinX float32
+	boundsMinY float32
+	boundsMinZ float32
+	boundsMaxX float32
+	boundsMaxY float32
+	boundsMaxZ float32
 }
 
 type TileCacheTileHeader struct {
@@ -137,9 +141,11 @@ type TileCacheTileHeader struct {
 	dataSize int32
 }
 
-const NAVMESHSET_MAGIC int32 = int32('M')<<24 | int32('S')<<16 | int32('E')<<8 | int32('T')
+const NAVMESHSET_MAGIC_RAW int32 = int32('M')<<24 | int32('S')<<16 | int32('E')<<8 | int32('T')
+const NAVMESHSET_MAGIC_EXT int32 = int32('M')<<24 | int32('S')<<16 | int32('A')<<8 | int32('T')
 const NAVMESHSET_VERSION int32 = 1
-const TILECACHESET_MAGIC int32 = int32('T')<<24 | int32('S')<<16 | int32('E')<<8 | int32('T')
+const TILECACHESET_MAGIC_RAW int32 = int32('T')<<24 | int32('S')<<16 | int32('E')<<8 | int32('T')
+const TILECACHESET_MAGIC_EXT int32 = int32('T')<<24 | int32('S')<<16 | int32('A')<<8 | int32('T')
 const TILECACHESET_VERSION int32 = 1
 
 func (this *Detour) loadStaticMesh(path string, errCode *int) *detour.DtNavMesh {
@@ -152,7 +158,7 @@ func (this *Detour) loadStaticMesh(path string, errCode *int) *detour.DtNavMesh 
 
 	// Read header.
 	header := (*NavMeshSetHeader)(unsafe.Pointer(&(meshData[0])))
-	if header.magic != NAVMESHSET_MAGIC {
+	if header.magic != NAVMESHSET_MAGIC_RAW && header.magic != NAVMESHSET_MAGIC_EXT {
 		*errCode = 103
 		return nil
 	}
@@ -161,12 +167,17 @@ func (this *Detour) loadStaticMesh(path string, errCode *int) *detour.DtNavMesh 
 		return nil
 	}
 
-	this.mBoundsMin[0] = header.boundsMinX
-	this.mBoundsMin[1] = header.boundsMinY
-	this.mBoundsMin[2] = header.boundsMinZ
-	this.mBoundsMax[0] = header.boundsMaxX
-	this.mBoundsMax[1] = header.boundsMaxY
-	this.mBoundsMax[2] = header.boundsMaxZ
+	d := int32(unsafe.Sizeof(*header))
+	if header.magic == NAVMESHSET_MAGIC_EXT {
+		headerExt := (*NavMeshSetHeaderExt)(unsafe.Pointer(&(meshData[d])))
+		d += int32(unsafe.Sizeof(*headerExt))
+		this.mBoundsMin[0] = headerExt.boundsMinX
+		this.mBoundsMin[1] = headerExt.boundsMinY
+		this.mBoundsMin[2] = headerExt.boundsMinZ
+		this.mBoundsMax[0] = headerExt.boundsMaxX
+		this.mBoundsMax[1] = headerExt.boundsMaxY
+		this.mBoundsMax[2] = headerExt.boundsMaxZ
+	}
 
 	mesh := detour.DtAllocNavMesh()
 	if mesh == nil {
@@ -180,7 +191,6 @@ func (this *Detour) loadStaticMesh(path string, errCode *int) *detour.DtNavMesh 
 	}
 
 	// Read tiles.
-	d := int32(unsafe.Sizeof(*header))
 	for i := 0; i < int(header.numTiles); i++ {
 		tileHeader := (*NavMeshTileHeader)(unsafe.Pointer(&(meshData[d])))
 		if tileHeader.tileRef == 0 || tileHeader.dataSize == 0 {
@@ -208,7 +218,7 @@ func (this *Detour) loadDynamicMesh(path string, errCode *int) *detour.DtNavMesh
 
 	// Read header.
 	header := (*TileCacheSetHeader)(unsafe.Pointer(&(meshData[0])))
-	if header.magic != TILECACHESET_MAGIC {
+	if header.magic != TILECACHESET_MAGIC_RAW && header.magic != TILECACHESET_MAGIC_EXT {
 		*errCode = 203
 		return nil
 	}
@@ -217,12 +227,17 @@ func (this *Detour) loadDynamicMesh(path string, errCode *int) *detour.DtNavMesh
 		return nil
 	}
 
-	this.mBoundsMin[0] = header.boundsMinX
-	this.mBoundsMin[1] = header.boundsMinY
-	this.mBoundsMin[2] = header.boundsMinZ
-	this.mBoundsMax[0] = header.boundsMaxX
-	this.mBoundsMax[1] = header.boundsMaxY
-	this.mBoundsMax[2] = header.boundsMaxZ
+	d := int(unsafe.Sizeof(*header))
+	if header.magic == TILECACHESET_MAGIC_EXT {
+		headerExt := (*TileCacheSetHeaderExt)(unsafe.Pointer(&(meshData[d])))
+		d += int(unsafe.Sizeof(*headerExt))
+		this.mBoundsMin[0] = headerExt.boundsMinX
+		this.mBoundsMin[1] = headerExt.boundsMinY
+		this.mBoundsMin[2] = headerExt.boundsMinZ
+		this.mBoundsMax[0] = headerExt.boundsMaxX
+		this.mBoundsMax[1] = headerExt.boundsMaxY
+		this.mBoundsMax[2] = headerExt.boundsMaxZ
+	}
 
 	defer func() {
 		if *errCode != 0 {
@@ -255,7 +270,6 @@ func (this *Detour) loadDynamicMesh(path string, errCode *int) *detour.DtNavMesh
 	}
 
 	// Read tiles.
-	d := int(unsafe.Sizeof(*header))
 	for i := 0; i < int(header.numTiles); i++ {
 		tileHeader := (*TileCacheTileHeader)(unsafe.Pointer(&(meshData[d])))
 		d += int(unsafe.Sizeof(*tileHeader))
