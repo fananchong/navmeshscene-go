@@ -4,6 +4,7 @@ type Object struct {
 	Point
 	mNode     *QuadTreeNode
 	QueryNext *Object
+	UserData  uint64
 }
 
 func NewScene(bounds *Rect, nodeCapacity, levelLimit int) *QuadTree {

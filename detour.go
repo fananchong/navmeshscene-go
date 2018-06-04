@@ -289,69 +289,183 @@ func (this *Detour) loadDynamicMesh(path string, errCode *int) *detour.DtNavMesh
 	return this.mMesh
 }
 
-//func (this *Detour)TryMove(
-//         startPolyRef uint32,
-//         startPos[]float32,
-//         endPos[]float32,
-//         halfExtents[3]float32,
-//         filter *detour.DtQueryFilter,
-//         realEndPolyRef*uint32,
-//         realEndPos[]float32,
-//         bHit *bool)bool    {
-//        *bHit = false;
-//        if (this.mQuery==nil) {
-//            return false;
-//        }
-//        var visited[16]detour.DtPolyRef;
-//         nvisited := 0;
-//         status := this.mQuery.MoveAlongSurface(
-//            (detour.DtPolyRef)(startPolyRef),
-//            startPos,
-//            endPos,
-//            &filter,
-//            realEndPos,
-//            visited,
-//            &nvisited,
-//            sizeof(visited) / sizeof(visited[0]),
-//            bHit
-//        );
+func (this *Detour) TryMove(
+	startPolyRef detour.DtPolyRef,
+	startPos []float32,
+	endPos []float32,
+	halfExtents []float32,
+	filter *detour.DtQueryFilter,
+	realEndPolyRef *detour.DtPolyRef,
+	realEndPos []float32,
+	bHit *bool) bool {
+	*bHit = false
+	if this.mQuery == nil {
+		return false
+	}
+	const visitedNodeCount = 16
+	var visited [visitedNodeCount]detour.DtPolyRef
+	nvisited := 0
+	status := this.mQuery.MoveAlongSurface(
+		startPolyRef,
+		startPos,
+		endPos,
+		filter,
+		realEndPos,
+		visited[:],
+		&nvisited,
+		visitedNodeCount,
+		bHit)
 
-//        if (dtStatusDetail(status, DT_INVALID_PARAM)) {
-//            dtPolyRef tempRef;
-//            float tempPos[3];
-//            mQuery->findNearestPoly(startPos, halfExtents, &filter, &tempRef, tempPos);
-//            startPolyRef = tempRef;
-//            dtVcopy(startPos, tempPos);
+	if detour.DtStatusDetail(status, detour.DT_INVALID_PARAM) {
+		var tempRef detour.DtPolyRef
+		var tempPos [3]float32
+		this.mQuery.FindNearestPoly(startPos, halfExtents, filter, &tempRef, tempPos[:])
+		startPolyRef = tempRef
+		detour.DtVcopy(startPos, tempPos[:])
 
-//            status = mQuery->moveAlongSurface(
-//                (dtPolyRef)startPolyRef,
-//                startPos,
-//                endPos,
-//                &filter,
-//                realEndPos,
-//                visited,
-//                &nvisited,
-//                sizeof(visited) / sizeof(visited[0]),
-//                bHit
-//            );
-//        }
+		status = this.mQuery.MoveAlongSurface(
+			startPolyRef,
+			startPos,
+			endPos,
+			filter,
+			realEndPos,
+			visited[:],
+			&nvisited,
+			visitedNodeCount,
+			bHit)
+	}
 
-//        if (!dtStatusSucceed(status)) {
-//            return false;
-//        }
+	if !detour.DtStatusSucceed(status) {
+		return false
+	}
 
-//        realEndPolyRef = visited[nvisited - 1];
+	*realEndPolyRef = visited[nvisited-1]
 
-//        if (mHeightMode != DynamicScene::HEIGHT_MODE_2) {
-//            float h = 0;
-//            mQuery->getPolyHeight((dtPolyRef)realEndPolyRef, realEndPos, &h);
-//            realEndPos[1] = h;
-//        }
-//        else {
-//            dtPolyRef tempRef;
-//            float tempPos[3];
-//            mQueryForHeightMode2->findNearestPoly(realEndPos, halfExtents, &filter, &tempRef, tempPos);
-//            realEndPos[1] = tempPos[1];
-//        }
-//        return true;
-//    }
+	if this.mHeightMode != HEIGHT_MODE_2 {
+		var h float32 = 0
+		this.mQuery.GetPolyHeight(*realEndPolyRef, realEndPos, &h)
+		realEndPos[1] = h
+	} else {
+		var tempRef detour.DtPolyRef
+		var tempPos [3]float32
+		this.mQueryForHeightMode2.FindNearestPoly(realEndPos, halfExtents, filter, &tempRef, tempPos[:])
+		realEndPos[1] = tempPos[1]
+	}
+	return true
+}
+
+func (this *Detour) GetPoly(
+	pos []float32,
+	halfExtents []float32,
+	filter *detour.DtQueryFilter,
+	nearestRef *detour.DtPolyRef,
+	nearestPt []float32) bool {
+	if this.mQuery == nil {
+		return false
+	}
+	var nRef detour.DtPolyRef
+	status := this.mQuery.FindNearestPoly(pos, halfExtents, filter, &nRef, nearestPt)
+	if !detour.DtStatusSucceed(status) {
+		return false
+	}
+	*nearestRef = nRef
+	return true
+}
+
+func (this *Detour) Raycast(
+	startPolyRef detour.DtPolyRef,
+	startPos []float32,
+	endPos []float32,
+	filter *detour.DtQueryFilter,
+	bHit *bool,
+	hitPos []float32) bool {
+	if this.mQuery == nil {
+		return false
+	}
+	var t float32 = 0
+	var hitNormal [3]float32
+	const polysCount = 16
+	var polys [polysCount]detour.DtPolyRef
+	npolys := 0
+	status := this.mQuery.Raycast(startPolyRef, startPos, endPos, filter,
+		&t, hitNormal[:], polys[:], &npolys, polysCount)
+	if !detour.DtStatusSucceed(status) {
+		return false
+	}
+	*bHit = (t <= 1)
+	if *bHit {
+		detour.DtVlerp(hitPos, startPos, endPos, t)
+		if npolys > 0 {
+			var h float32 = 0
+			this.mQuery.GetPolyHeight(polys[npolys-1], hitPos, &h)
+			hitPos[1] = h
+		}
+	}
+	return true
+}
+
+func (this *Detour) RandomPosition(halfExtents []float32,
+	filter *detour.DtQueryFilter,
+	frand func() float32,
+	randomRef *detour.DtPolyRef,
+	randomPt []float32) bool {
+	if this.mQuery == nil {
+		return false
+	}
+	var ref detour.DtPolyRef
+	status := this.mQuery.FindRandomPoint(filter, frand, &ref, randomPt)
+	if !detour.DtStatusSucceed(status) {
+		return false
+	}
+	*randomRef = ref
+	if this.mHeightMode == HEIGHT_MODE_2 {
+		var tempRef detour.DtPolyRef
+		var tempPos [3]float32
+		this.mQueryForHeightMode2.FindNearestPoly(randomPt, halfExtents, filter, &tempRef, tempPos[:])
+		randomPt[1] = tempPos[1]
+	}
+	return true
+}
+
+func (this *Detour) AddCapsuleObstacle(pos []float32, radius, height float32) uint {
+	if this.mTileCache == nil {
+		return 0
+	}
+	var obstacleId dtcache.DtObstacleRef
+	status := this.mTileCache.AddObstacle(pos, radius, height, &obstacleId)
+	if !detour.DtStatusSucceed(status) {
+		return 0
+	}
+	return (uint)(obstacleId)
+}
+
+func (this *Detour) AddBoxObstacle(bmin []float32, bmax []float32) uint {
+	if this.mTileCache == nil {
+		return 0
+	}
+	var obstacleId dtcache.DtObstacleRef
+	status := this.mTileCache.AddBoxObstacle(bmin, bmax, &obstacleId)
+	if !detour.DtStatusSucceed(status) {
+		return 0
+	}
+	return (uint)(obstacleId)
+}
+
+func (this *Detour) AddBoxObstacle2(center []float32, halfExtents []float32, yRadians float32) uint {
+	if this.mTileCache == nil {
+		return 0
+	}
+	var obstacleId dtcache.DtObstacleRef
+	status := this.mTileCache.AddBoxObstacle2(center, halfExtents, yRadians, &obstacleId)
+	if !detour.DtStatusSucceed(status) {
+		return 0
+	}
+	return (uint)(obstacleId)
+}
+
+func (this *Detour) RemoveObstacle(obstacleId uint) {
+	if this.mTileCache == nil || obstacleId == 0 {
+		return
+	}
+	this.mTileCache.RemoveObstacle((dtcache.DtObstacleRef)(obstacleId))
+}
