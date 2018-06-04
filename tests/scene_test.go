@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 	"time"
@@ -21,11 +22,18 @@ func NewPlayer() *Player {
 }
 
 func (this *Player) OnHit(agentId uint64) {
-
+	this.ChangeDir()
 }
 
 func (this *Player) ChangeDir() {
-
+	angle := float64(rand.Int() % 360)
+	vx := math.Cos(math.Pi * angle / 180)
+	vy := -math.Sin(math.Pi * angle / 180)
+	s := math.Sqrt(vx*vx + vy*vy)
+	vx = vx / s
+	vy = vy / s
+	v := [3]float32{float32(vx * 5), 0, float32(vy * 5)}
+	this.Velocity = v
 }
 
 const PLAYER_COUNT = 5000

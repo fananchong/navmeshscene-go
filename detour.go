@@ -353,7 +353,10 @@ func (this *Detour) TryMove(
 		return false
 	}
 
-	*realEndPolyRef = visited[nvisited-1]
+	*realEndPolyRef = startPolyRef
+	if nvisited > 0 {
+		*realEndPolyRef = visited[nvisited-1]
+	}
 
 	if this.mHeightMode != HEIGHT_MODE_2 {
 		var h float32 = 0
